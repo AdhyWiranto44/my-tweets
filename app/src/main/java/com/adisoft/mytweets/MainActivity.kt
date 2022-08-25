@@ -1,5 +1,7 @@
 package com.adisoft.mytweets
 
+import android.content.ContentValues
+import android.database.Cursor
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -14,20 +16,26 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tweetButton: Button
     private lateinit var tweetListView: ListView
     private lateinit var tweets: ArrayList<String>
+    private lateinit var db: TweetDAO
 
     private fun initComponents() {
         tweetEditText = findViewById(R.id.tweetEditText)
         tweetButton = findViewById(R.id.tweetButton)
         tweetListView = findViewById(R.id.tweetListView)
         tweets = ArrayList()
+        db = TweetDAO(this)
+    }
+
+    private fun renderData() {
+        val datas: Cursor = db.getAll()
+        while (datas.moveToNext()) tweets.add(0,datas.getString(1).toString())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initComponents()
-
-        tweets.add("Default Tweet")
+        renderData()
 
         val adapter: ArrayAdapter<String?> = ArrayAdapter<String?>(
             this@MainActivity,
@@ -38,13 +46,13 @@ class MainActivity : AppCompatActivity() {
         tweetListView.adapter = adapter
 
         tweetButton.setOnClickListener {
-            val newTweet: String = tweetEditText.text.toString()
+            val newTweet = ContentValues()
+            newTweet.put("tweet", tweetEditText.text.toString())
+            db.insert(newTweet)
+            tweets.add(0, tweetEditText.text.toString())
+            tweetEditText.text.clear()
 
-            if(newTweet.isNotEmpty()) {
-                if (tweets.size == 1 && tweets[0] == "Default Tweet") tweets.clear()
-                tweets.add(0, newTweet)
-                adapter.notifyDataSetChanged()
-            }
+            adapter.notifyDataSetChanged()
         }
     }
 }
